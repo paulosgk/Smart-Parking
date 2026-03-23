@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Parking Dashboard</title>
+    <style>
+        /* Απλό και μοντέρνο Design (CSS) */
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: #f4f7f6; 
+            display: flex; flex-direction: column; align-items: center; 
+            padding-top: 50px; margin: 0; 
+        }
+        .dashboard { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
+        
+        /* Η κάρτα της θέσης Πάρκινγκ */
+        .parking-spot { 
+            background: white; padding: 40px; border-radius: 15px; 
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1); 
+            width: 250px; text-align: center;
+            transition: all 0.3s ease; /* Ομαλό animation αλλαγής χρώματος */
+            border: 5px solid #ccc;
+        }
+        .spot-title { font-size: 24px; font-weight: bold; margin-bottom: 10px; color: #333; }
+        .status { font-size: 24px; font-weight: bold; margin: 20px 0; padding: 15px; border-radius: 8px; }
+        .sensor-data { color: #666; font-size: 14px; }
+
+        /* Τα χρώματα ανάλογα με την κατάσταση */
+        .empty { border-color: #28a745; }
+        .empty .status { background-color: #d4edda; color: #155724; }
+        
+        .occupied { border-color: #dc3545; }
+        .occupied .status { background-color: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+
+    <h1>Smart Parking IoT Monitor</h1>
+    
+    <div class="dashboard">
+        <div id="spot1" class="parking-spot">
+            <div class="spot-title">Θέση 1</div>
+            <div id="statusText" class="status">Φόρτωση...</div>
+            <div class="sensor-data">Μαγνητικό Πεδίο: <span id="sensorValue">--</span></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+
+        // --- 1. ΒΑΛΕ ΤΟ ΔΙΚΟ ΣΟΥ FIREBASE URL ΕΔΩ ---
+        const firebaseConfig = {
+            databaseURL: "https://smartparkingiot-a9468-default-rtdb.europe-west1.firebasedatabase.app" 
+        };
+
+        // 2. Αρχικοποίηση
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        // 3. Λέμε στη σελίδα ποιον "φάκελο" να κοιτάει στη βάση
+        const spotRef = ref(database, 'parking/spot_1');
+
+        // 4. Σύνδεση του κώδικα με τα κουτάκια του HTML
+        const spotDiv = document.getElementById('spot1');
+        const statusText = document.getElementById('statusText');
+        const sensorValue = document.getElementById('sensorValue');
+
+        // 5. Η ΜΑΓΕΙΑ: Αυτός ο κώδικας τρέχει αυτόματα κάθε φορά που αλλάζουν τα δεδομένα στη Firebase!
+        onValue(spotRef, (snapshot) => {
+            const data = snapshot.val();
+            
+            if (data) {
+                // Ενημερώνουμε το νουμεράκι του αισθητήρα στην οθόνη
+                sensorValue.innerText = data.sensor_value;
+
+                // Ελέγχουμε το status και αλλάζουμε τα χρώματα
+                if (data.status === "OCCUPIED") {
+                    statusText.innerText = "ΚΑΤΕΙΛΗΜΜΕΝΗ";
+                    spotDiv.className = "parking-spot occupied"; // Εφαρμόζει το κόκκινο CSS
+                } else {
+                    statusText.innerText = "ΕΛΕΥΘΕΡΗ";
+                    spotDiv.className = "parking-spot empty"; // Εφαρμόζει το πράσινο CSS
+                }
+            }
+        });
+    </script>
+</body>
+</html>
